@@ -2,12 +2,9 @@ import functools
 import random
 from pprint import pformat
 
-
 def multiply_vector_elements(vector):
     """ return the multiplication of the vector elements """
 
-    def mult(x, y):
-        return x*y
 
     return functools.reduce(mult, vector, 1)
 
@@ -16,16 +13,6 @@ class Variable(object):
     """ Node in the network. Represent a random Variable """
 
     def __init__(self, name, assignments, probability_table, parents=[], children=[]):
-        """ Node initialization
-            params:
-            name: name of this random variable.
-            assignments: possible values this variable can have.
-            probability_table: the casual probability table of this variable.
-            parents: list of references to this Node`s parents.
-            children: list of references to this Node`s children.
-        """
-
-        # the name of this random variable
         self.name = name
 
         # holds the possible assignments of this random variable
@@ -56,30 +43,10 @@ class Variable(object):
         # true when the marginal probabilities were calculated
         self.ready = False
 
-    def get_name(self):
-        """ return the name of this random variable """
-        return self.name
-
-    def get_assignments(self):
-        """ return the possible values this variable can have """
-        return self.assignments
-
-    def get_assignment_index(self, assignment):
-        """ returns the index of a given possible assignment within the assignments list """
-        return self.assignments[assignment]
-
     def get_probability(self, value, parents_values):
-        """ read from the distribution table and return the probability of having a
-            certain value (value) given the values of the parents.
-        """
         return self.probability_table[parents_values][self.assignments[value]]
 
     def get_conditional_probability(self, value, parents_values):
-        """ read from the distribution table and return the probability of having a
-            certain value (value) given the values of the parents.
-            here the parents assignments can be partial
-            parent_vals is a dictionary: { parent: value }
-        """
         res = 0
         given_parents_index = []
         marginal_parents_index = []
@@ -89,7 +56,6 @@ class Variable(object):
             else:
                 marginal_parents_index.append(i)
 
-        # go over the rows in the distribution table
         for row_key, row_val in self.probability_table.items():
             valid_row = 1
 
@@ -111,16 +77,8 @@ class Variable(object):
         return res
 
     def calculate_marginal_probability(self):
-        """ calculates and stores the marginal probabilities of this node.
-            this function should be call before any other calculation is done.
-        """
-
-        # return, if already done
         if self.ready:
             return
-
-        # COMPLETE THIS FUNCTION
-        # Set self.marginal_probabilities
         if not self.parents:
             for assignment, idx in self.assignments.items():
                 self.marginal_probabilities[idx] = self.probability_table[()][idx]
@@ -138,12 +96,8 @@ class Variable(object):
         self.ready = True
 
     def get_marginal_probability(self, val):
-        """ returns the marginal probability, to have a certain value """
         return self.marginal_probabilities[self.assignments[val]]
 
-    def add_child(self, node):
-        """ add dependent Variable to this variable """
-        self.children.append(node)
 
     def add_parent(self, node):
         """ add a parent to this Variable """
@@ -175,9 +129,6 @@ class BayesianNetwork(object):
         self.ready = False          # indication of this net state
 
     def calculate_marginal_probabilities(self):
-        """ pre-calculate and stores the marginal probabilities of all the nodes """
-
-        # iterate over the Nodes, from parents to children
         for var in self.variables:
             var.calculate_marginal_probability()
         self.ready = True
@@ -204,21 +155,11 @@ class BayesianNetwork(object):
         self.ready = False  # we need to re-calculate marginals
 
     def set_variables(self, varList):
-        """ quick assignment: set the given Node list to be the Nodes of this
-            net
-        """
-
         self.variables = varList
         for var in self.variables:
             self.varsMap[var.name] = var
         self.ready = False  # we need to re-calculate marginals
 
-    def get_marginal_probability(self, var, val):
-        """ returns the marginal probability of a given node """
-
-        return var.get_marginal_probability(val)
-
-    # values is dictionary
     def get_joint_probability(self, values):
         """ return the joint probability of the Nodes """
         # COMPLETE THIS FUNCTION
@@ -306,10 +247,6 @@ def create_random_sample(network):
         assignment1 = list(var.assignments.keys())[0]
         assignment2 = list(var.assignments.keys())[1]
 
-        parents_values = network.sub_vals(var, sample)
-        prob = var.get_probability(assignment1, parents_values)
-
-        if samp <= prob:
             sample[var.name] = assignment1
         else:
             sample[var.name] = assignment2
@@ -340,15 +277,6 @@ def print_joint_probability(network, values):
     print("is {:f}".format(network.get_joint_probability(values)))
 
 
-def print_marginal_probabilities(network):
-    print("Marginal probabilities:")
-    for variable in network.get_variables():
-        print("    {}".format(variable.get_name()))
-        for assignment in variable.get_assignments():
-            print("        {}: {:f}".format(
-                assignment,
-                variable.get_marginal_probability(assignment))
-            )
 
 
 def sprinkler():
@@ -384,23 +312,8 @@ def sprinkler():
 
     joint_values = {
         'Sprinkler': 'true',
-        'Cloudy': 'false',
-        'WetGrass': 'true',
-        'Rain': 'false'
-    }
-    print_joint_probability(network, joint_values)
-
-    print('')
-
-    conditionals_vars = {'Sprinkler': 'true'}
     conditionals_evidents = {'WetGrass': 'true'}
 
     print_conditional_probability(network, conditionals_vars, conditionals_evidents)
-
     print('')
 
-    sample = create_random_sample(network)
-    print_joint_probability(network, sample)
-
-
-sprinkler()
